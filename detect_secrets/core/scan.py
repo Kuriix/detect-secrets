@@ -1,5 +1,6 @@
 import os
 import subprocess
+from urllib3 import PoolManager
 from typing import Any
 from typing import cast
 from typing import Generator
@@ -163,6 +164,32 @@ def scan_file(filename: str) -> Generator[PotentialSecret, None, None]:
                 break
     except IOError:
         log.warning(f'Unable to open file: {filename}')
+        return
+
+def scan_remote_file(filename: str, poolManager: PoolManager) -> Generator[PotentialSecret, None, None]:
+    try:
+        if not get_plugins():   # pragma: no cover
+            log.error('No plugins to scan with!')
+            return
+    except FileNotFoundError:
+        log.error('Unable to load plugins!')
+        return
+
+    request = poolManager.request('GET', filename)
+    if request.status != 200:
+        log.debug(f'Unable to download file: {filename}')
+        return
+    
+    try:
+        lines = request.data.decode('utf-8').splitlines()
+        for secret in _process_line_based_plugins(
+            lines=list(enumerate(lines, start=1)),
+            filename=filename,
+        ):
+            yield secret
+
+    except UnicodeDecodeError:
+        log.debug(f'Unable to decode file: {filename}')
         return
 
 

@@ -5,7 +5,19 @@
 [![AMF](https://img.shields.io/badge/Donate-Charity-orange.svg)](https://www.againstmalaria.com/donation.aspx)
 
 # detect-secrets
+This fork of `detect-secrets` allows to scan a **remote file** using the HTTP protocol. 
+Usage example:
+```python
+from detect_secrets import SecretsCollection
+from detect_secrets.settings import default_settings
+from urllib3 import PoolManager
 
+secrets = SecretsCollection()
+with default_settings():
+    res = secrets.scan_file('https://...', PoolManager())
+    print(secrets.json())
+```
+Also, `secrets.json()` now takes an argument `showSecret`, which can be set to `True` to show the secret values in the output. 
 ## About
 
 `detect-secrets` is an aptly named module for (surprise, surprise) **detecting secrets** within a

@@ -95,11 +95,12 @@ class PotentialSecret:
 
         return output
 
-    def json(self) -> Dict[str, Union[str, int, bool]]:
+    def json(self, showSecret: bool = False) -> Dict[str, Union[str, int, bool]]:
         """Custom JSON encoder"""
         attributes: Dict[str, Union[str, int, bool]] = {
             'type': self.type,
             'filename': self.filename,
+            'secret': self.secret_value if showSecret else '',
             'hashed_secret': self.secret_hash,
             'is_verified': self.is_verified,
         }

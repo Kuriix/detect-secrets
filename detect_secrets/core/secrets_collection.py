@@ -1,5 +1,7 @@
 import multiprocessing as mp
 import os
+import re
+from urllib3 import PoolManager
 from collections import defaultdict
 from typing import Any
 from typing import Dict
@@ -72,9 +74,13 @@ class SecretsCollection:
                 for secret in secrets:
                     self[os.path.relpath(secret.filename, self.root)].add(secret)
 
-    def scan_file(self, filename: str) -> None:
-        for secret in scan.scan_file(os.path.join(self.root, convert_local_os_path(filename))):
-            self[convert_local_os_path(filename)].add(secret)
+    def scan_file(self, filename: str, poolManager: PoolManager = None) -> None:
+        if re.match(r'^https?:', filename):
+            for secret in scan.scan_remote_file(filename, poolManager or PoolManager()):
+                self[filename].add(secret)
+        else:
+            for secret in scan.scan_file(os.path.join(self.root, convert_local_os_path(filename))):
+                self[convert_local_os_path(filename)].add(secret)
 
     def scan_diff(self, diff: str) -> None:
         """
@@ -201,11 +207,11 @@ class SecretsCollection:
 
         self.data = result
 
-    def json(self) -> Dict[str, Any]:
+    def json(self, showSecret: bool = False) -> Dict[str, Any]:
         """Custom JSON encoder"""
         output = defaultdict(list)
         for filename, secret in self:
-            output[filename].append(secret.json())
+            output[filename].append(secret.json(showSecret))
 
         return dict(output)
 
